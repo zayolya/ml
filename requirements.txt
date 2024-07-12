@@ -1,0 +1,12 @@
+fastapi==0.110.0
+uvicorn==0.28.0
+sqlalchemy==1.4.35
+loguru==0.7.2
+psycopg2==2.9.9
+pydantic==2.6.4
+catboost==1.2
+pandas==1.4.2
+scikit_learn
+seaborn==0.13.2
+matplotlib==3.9.0
+numpy==1.26.4
