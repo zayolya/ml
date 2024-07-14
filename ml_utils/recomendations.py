@@ -4,11 +4,10 @@ from schema import PostGet
 
 
 # колонки для предсказания (они же были на обучении)
-train_cols = ['gender', 'age', 'country', 'city', 'exp_group', 'os', 'source', 'topic', 'TextCluster',
-              'DistanceTo1Cluster', 'DistanceTo2Cluster', 'DistanceTo3Cluster', 'DistanceTo4Cluster',
-              'DistanceTo5Cluster', 'DistanceTo6Cluster', 'DistanceTo7Cluster', 'DistanceTo8Cluster',
-              'DistanceTo9Cluster', 'DistanceTo10Cluster', 'DistanceTo11Cluster', 'DistanceTo12Cluster', 'hour',
-              'weekday', 'month']
+train_cols = ['gender', 'age', 'country', 'city', 'exp_group', 'topic', 'TextCluster', 'DistanceTo1Cluster',
+              'DistanceTo2Cluster', 'DistanceTo3Cluster', 'DistanceTo4Cluster', 'DistanceTo5Cluster',
+              'DistanceTo6Cluster', 'DistanceTo7Cluster', 'DistanceTo8Cluster', 'DistanceTo9Cluster',
+              'DistanceTo10Cluster', 'DistanceTo11Cluster', 'DistanceTo12Cluster', 'hour', 'weekday', 'month']
 
 
 def get_post_recommendations(date: datetime, limit: int, user_row: pd.DataFrame, posts: pd.DataFrame, model) -> list[PostGet]:
