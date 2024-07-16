@@ -36,3 +36,9 @@ http://localhost:8081/post/recommendations/?id=3089&time=2021-12-23 12:00:01&lim
 ```
 
 ![Screenshot 2024-07-14 at 11.40.12.png](screenshot%2FScreenshot%202024-07-14%20at%2011.40.12.png)
+
+6. To **retrain model** run ml_utils/train_model.py
+
+
+7. To see **EDA** jupiter_notebooks/data_analyse.ipynb
+
