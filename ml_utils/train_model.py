@@ -1,16 +1,16 @@
-import joblib
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from catboost import CatBoostClassifier
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, precision_score
 from sqlalchemy import create_engine, text
 from clearml import Task
 
 USER_QUERY = "SELECT * FROM public.user_data"
 POST_QUERY = "SELECT * FROM public.post_text_df"
-FEED_QUERY = "SELECT * FROM public.feed_data WHERE action='view' LIMIT 5000000"
+FEED_QUERY_0 = "SELECT * FROM public.feed_data WHERE action='view' AND target=0 LIMIT 2500000"
+FEED_QUERY_1 = "SELECT * FROM public.feed_data WHERE action='view' AND target=1 LIMIT 2500000"
 DB_URL = "postgresql://robot-startml-ro:pheiph0hahj1Vaif@postgres.lab.karpov.courses:6432/startml"
 ENGINE = create_engine(
     "postgresql://robot-startml-ro:pheiph0hahj1Vaif@"
@@ -23,7 +23,10 @@ def load_tables():
     engine_cloud = create_engine(DB_URL)
     user_data = pd.DataFrame(engine_cloud.connect().execute(text(USER_QUERY)))
     post_data = pd.DataFrame(engine_cloud.connect().execute(text(POST_QUERY)))
-    feed_data = pd.DataFrame(engine_cloud.connect().execute(text(FEED_QUERY)))
+    # берем одинаковое количество записей с таргетом 0 и 1
+    feed_data_1 = pd.DataFrame(engine_cloud.connect().execute(text(FEED_QUERY_1)))
+    feed_data_0 = pd.DataFrame(engine_cloud.connect().execute(text(FEED_QUERY_0)))
+    feed_data = pd.concat([feed_data_1, feed_data_0], ignore_index=True)
     return (user_data, post_data, feed_data)
 
 
@@ -94,15 +97,13 @@ if __name__ == '__main__':
     # Вариации параметров для обучения
     train_params = [
         # {},
-        # {'random_seed': 63, 'learning_rate': 0.5, 'early_stopping_rounds': 80},
-        # {'depth': 6, 'l2_leaf_reg': 8, 'early_stopping_rounds': 70},
+        # {'learning_rate': 0.5, 'early_stopping_rounds': 80},
         {'learning_rate': 0.2, 'early_stopping_rounds': 60},
         {'learning_rate': 0.1, 'early_stopping_rounds': 50}
                     ]
     # Обучение с различными параметрами с отслеживанием в ClearML
     for i, param in enumerate(train_params):
-        i += 3
-        task = Task.init(project_name='Olgas catboost prj', task_name=f'Catboost task {i}', tags=['catboost'],
+        task = Task.init(project_name='catboost eql cls', task_name=f'CB_{i}', tags=['catboost'],
                          output_uri=True)
         # Log params
         task.connect(param)
@@ -114,19 +115,27 @@ if __name__ == '__main__':
 
         roc_auc_train = roc_auc_score(y_train, catboost.predict_proba(X_train)[:, 1])
         roc_auc_test = roc_auc_score(y_test, catboost.predict_proba(X_test)[:, 1])
-        print(f"Качество на трейне: {roc_auc_train}")
-        print(f"Качество на тесте: {roc_auc_test}")
+        precision_train = precision_score(y_train, catboost.predict(X_train), average='weighted')
+        precision_test = precision_score(y_test, catboost.predict(X_test), average='weighted')
+
+        print(f"roc_auc на трейне: {roc_auc_train}")
+        print(f"roc_auc на тесте: {roc_auc_test}")
+        print(f"precision на трейне: {precision_train}")
+        print(f"precision на тесте: {precision_test}")
 
         logger = task.get_logger()
         logger.report_single_value('roc_auc_score на трейне:', roc_auc_train)
         logger.report_single_value('roc_auc_score на тесте:', roc_auc_test)
+        logger.report_single_value('precision на трейне:', precision_train)
+        logger.report_single_value('precision на тесте:', precision_test)
+
+        logger.report_single_value('train rows cnt', X_train.shape[0])
+        logger.report_single_value('test rows cnt', X_test.shape[0])
 
         # сохраним модель
         catboost.save_model(f'catboost_model_{i}', format="cbm")
 
         # сохраним столбцы обучения
         print("train columns", X_train.columns)
-
-        joblib.dump(catboost, f"cat_boost_{i}", compress=True)
 
         task.close()

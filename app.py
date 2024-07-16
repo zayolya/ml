@@ -5,7 +5,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from starlette.responses import JSONResponse
 
-from db_utils.database import batch_load_sql, SessionLocal
+from db_utils.database import batch_load_sql
 from ml_utils.load_model import load_models
 from ml_utils.recomendations import get_post_recommendations
 from schema import PostGet
@@ -14,11 +14,6 @@ app = FastAPI()
 model = load_models()
 USERS = batch_load_sql("SELECT * FROM public.user_data")
 POSTS = batch_load_sql("SELECT * FROM osavinova_posts_final")
-
-
-def get_db():
-    with SessionLocal() as db:
-        return db
 
 
 @app.get('/post/recommendations/', response_model=List[PostGet])
